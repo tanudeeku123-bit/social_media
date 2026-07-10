@@ -25,6 +25,12 @@ router.post('/', async (req, res) => {
   if (!handle) {
     return res.status(400).json({ error: 'Handle is required' });
   }
+  if (!app_password || app_password.trim().length < 4) {
+    return res.status(400).json({ error: 'Account Password / App Password is required and must be at least 4 characters long' });
+  }
+
+  // Simulate remote credentials verification delay
+  await new Promise((resolve) => setTimeout(resolve, 600));
 
   const id = uuidv4();
   await SocialAccount.create({
@@ -32,7 +38,7 @@ router.post('/', async (req, res) => {
     user_id: req.userId,
     platform,
     handle,
-    app_password: app_password || null
+    app_password: app_password.trim()
   });
 
   const account = await SocialAccount.findById(id).lean();

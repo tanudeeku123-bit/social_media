@@ -87,19 +87,24 @@ export default function Accounts() {
               </div>
             </div>
 
-            {platform === 'bluesky' && (
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">App Password</label>
-                <input
-                  type="password"
-                  value={appPassword}
-                  onChange={(e) => setAppPassword(e.target.value)}
-                  placeholder="App Password (optional, required for real publishing)"
-                  className="w-full px-4 py-2.5 rounded-xl glass-input text-sm"
-                />
-                <p className="text-[10px] text-slate-500 mt-1">Generate a secure app password inside your Bluesky Account Settings.</p>
-              </div>
-            )}
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                {platform === 'bluesky' ? 'App Password' : 'Account Password'}
+              </label>
+              <input
+                type="password"
+                required
+                value={appPassword}
+                onChange={(e) => setAppPassword(e.target.value)}
+                placeholder={platform === 'bluesky' ? "App Password" : "Password"}
+                className="w-full px-4 py-2.5 rounded-xl glass-input text-sm"
+              />
+              <p className="text-[10px] text-slate-500 mt-1">
+                {platform === 'bluesky' 
+                  ? 'Generate a secure app password inside your Bluesky Account Settings.' 
+                  : 'Enter password to authenticate connection.'}
+              </p>
+            </div>
 
             {error && <p className="text-rose-400 text-xs">{error}</p>}
 

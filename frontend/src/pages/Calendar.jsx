@@ -772,18 +772,19 @@ export default function Calendar({ refreshKey, defaultPlatforms }) {
                 />
               </div>
 
-              {connectPlatform === 'bluesky' && (
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">App Password</label>
-                  <input
-                    type="password"
-                    placeholder="App Password"
-                    value={connectPassword}
-                    onChange={(e) => setConnectPassword(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl glass-input text-xs font-medium"
-                  />
-                </div>
-              )}
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                  {connectPlatform === 'bluesky' ? 'App Password' : 'Account Password'}
+                </label>
+                <input
+                  type="password"
+                  required
+                  placeholder={connectPlatform === 'bluesky' ? "App Password" : "Password"}
+                  value={connectPassword}
+                  onChange={(e) => setConnectPassword(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl glass-input text-xs font-medium"
+                />
+              </div>
 
               {connectError && <p className="text-rose-400 text-xs font-semibold">{connectError}</p>}
 
