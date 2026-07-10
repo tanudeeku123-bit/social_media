@@ -36,7 +36,7 @@ export default function Accounts() {
     setError('');
     if (!handle.trim()) return;
     try {
-      await api.connectAccount(platform, handle.trim(), platform === 'bluesky' ? appPassword.trim() : undefined);
+      await api.connectAccount(platform, handle.trim(), appPassword.trim());
       setHandle('');
       setAppPassword('');
       showToast('Account connected successfully', 'success');
@@ -121,18 +121,60 @@ export default function Accounts() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {accounts.map((a) => (
                 <div
-                  key={a.id}
-                  className="flex items-center justify-between p-4 bg-slate-900/60 border border-slate-800/80 rounded-2xl hover:border-slate-700 transition-all"
+                  key={a._id || a.id}
+                  className="flex flex-col p-5 bg-slate-900/60 border border-slate-800/80 rounded-2xl hover:border-slate-700 transition-all gap-4 text-left"
                 >
-                  <div>
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded bg-slate-800 uppercase tracking-wider text-indigo-400 block w-fit mb-1">
-                      {PLATFORM_LABELS[a.platform] || a.platform}
-                    </span>
-                    <span className="text-sm text-slate-200 font-mono">@{a.handle}</span>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      {a.avatar_url ? (
+                        <img src={a.avatar_url} alt={a.profile_name} className="w-11 h-11 rounded-full border-2 border-indigo-500/20 object-cover shrink-0" />
+                      ) : (
+                        <div className="w-11 h-11 rounded-full bg-indigo-650/20 flex items-center justify-center font-bold text-indigo-400 text-lg border-2 border-indigo-500/10 shrink-0">
+                          {a.handle.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-extrabold text-sm text-white">{a.profile_name || a.handle}</span>
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-450 uppercase tracking-wider">
+                            {PLATFORM_LABELS[a.platform] || a.platform}
+                          </span>
+                        </div>
+                        <span className="text-xs text-slate-400 font-mono">@{a.handle}</span>
+                      </div>
+                    </div>
+
+                    <ConfirmButton onConfirm={() => disconnect(a._id || a.id)} className="text-[10px] text-rose-400 hover:text-rose-350 font-bold bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/10 px-2.5 py-1 rounded-lg transition-all cursor-pointer" confirmLabel="Confirm unpin?">
+                      Disconnect
+                    </ConfirmButton>
                   </div>
-                  <ConfirmButton onConfirm={() => disconnect(a.id)} className="text-xs text-rose-400 hover:text-rose-300 font-semibold" confirmLabel="Confirm unpin?">
-                    Disconnect
-                  </ConfirmButton>
+
+                  {a.bio && (
+                    <p className="text-xs text-slate-300 italic leading-relaxed bg-slate-950/20 px-3.5 py-2.5 rounded-xl border border-slate-900/40">
+                      {a.bio}
+                    </p>
+                  )}
+
+                  <div className="grid grid-cols-3 gap-2.5 text-center bg-slate-950/30 p-2.5 rounded-xl border border-slate-900/50">
+                    <div>
+                      <div className="text-[10px] font-bold text-slate-450">Followers</div>
+                      <div className="text-xs font-extrabold text-slate-200 mt-0.5">
+                        {a.followers_count ? a.followers_count.toLocaleString() : '0'}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-bold text-slate-450">Following</div>
+                      <div className="text-xs font-extrabold text-slate-200 mt-0.5">
+                        {a.following_count ? a.following_count.toLocaleString() : '0'}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-bold text-slate-455">Posts</div>
+                      <div className="text-xs font-extrabold text-slate-200 mt-0.5">
+                        {a.posts_count ? a.posts_count.toLocaleString() : '0'}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>

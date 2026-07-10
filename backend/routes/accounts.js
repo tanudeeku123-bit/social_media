@@ -16,6 +16,31 @@ router.get('/', async (req, res) => {
   res.json({ accounts, supported_platforms: SUPPORTED_PLATFORMS });
 });
 
+function getMockProfileDetails(platform, handle) {
+  const cleanHandle = handle.replace('@', '').trim();
+  if (cleanHandle.toLowerCase() === 'tani_sha_1210') {
+    return {
+      profile_name: 'Tanisha',
+      avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
+      followers_count: 1240,
+      following_count: 482,
+      posts_count: 42,
+      bio: 'Social Media Scrapper & Scrapbook Enthusiast ✨',
+    };
+  }
+  // Generate realistic details for any other handle
+  const randomFollowers = Math.floor(Math.random() * 5000) + 150;
+  const randomFollowing = Math.floor(Math.random() * 800) + 100;
+  return {
+    profile_name: cleanHandle.charAt(0).toUpperCase() + cleanHandle.slice(1),
+    avatar_url: `https://api.dicebear.com/7.x/adventurer/svg?seed=${cleanHandle}`,
+    followers_count: randomFollowers,
+    following_count: randomFollowing,
+    posts_count: Math.floor(Math.random() * 50) + 5,
+    bio: `Content Creator on ${platform.toUpperCase()} 🚀`,
+  };
+}
+
 router.post('/', async (req, res) => {
   const { platform, handle, app_password } = req.body;
 
@@ -32,13 +57,21 @@ router.post('/', async (req, res) => {
   // Simulate remote credentials verification delay
   await new Promise((resolve) => setTimeout(resolve, 600));
 
+  const profile = getMockProfileDetails(platform, handle);
+
   const id = uuidv4();
   await SocialAccount.create({
     _id: id,
     user_id: req.userId,
     platform,
-    handle,
-    app_password: app_password.trim()
+    handle: handle.replace('@', '').trim(),
+    app_password: app_password.trim(),
+    profile_name: profile.profile_name,
+    avatar_url: profile.avatar_url,
+    followers_count: profile.followers_count,
+    following_count: profile.following_count,
+    posts_count: profile.posts_count,
+    bio: profile.bio,
   });
 
   const account = await SocialAccount.findById(id).lean();

@@ -333,7 +333,7 @@ export default function Calendar({ refreshKey, defaultPlatforms }) {
     }
     setConnectBusy(true);
     try {
-      await api.connectAccount(connectPlatform, connectHandle.trim(), connectPlatform === 'bluesky' ? connectPassword.trim() : undefined);
+      await api.connectAccount(connectPlatform, connectHandle.trim(), connectPassword.trim());
       setConnectHandle('');
       setConnectPassword('');
       showToast('Account connected successfully!', 'success');

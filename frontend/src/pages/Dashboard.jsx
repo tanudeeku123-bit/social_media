@@ -84,10 +84,10 @@ export default function Dashboard({ refreshKey, onNavigate }) {
   }, [posts]);
 
   // Platforms verification connection list
-  const isInstagramLinked = accounts.some(a => a.platform === 'instagram');
-  const isFacebookLinked = accounts.some(a => a.platform === 'facebook');
-  const isTwitterLinked = accounts.some(a => a.platform === 'x' || a.platform === 'twitter');
-  const isLinkedInLinked = accounts.some(a => a.platform === 'linkedin');
+  const instagramAccount = accounts.find(a => a.platform === 'instagram');
+  const facebookAccount = accounts.find(a => a.platform === 'facebook');
+  const twitterAccount = accounts.find(a => a.platform === 'x' || a.platform === 'twitter');
+  const linkedInAccount = accounts.find(a => a.platform === 'linkedin');
 
   // Mini graphic creators for thumbnails
   function renderThumbnail(platform) {
@@ -362,17 +362,22 @@ export default function Dashboard({ refreshKey, onNavigate }) {
                 <div className="grid grid-cols-4 gap-3.5">
                   {/* Instagram Card */}
                   <div className="p-3 border border-slate-100 rounded-xl bg-slate-50/20 flex flex-col items-center gap-2">
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] text-white flex items-center justify-center shrink-0 shadow shadow-pink-100">
-                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-                        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                      </svg>
-                    </div>
+                    {instagramAccount && instagramAccount.avatar_url ? (
+                      <img src={instagramAccount.avatar_url} alt="Instagram profile" className="w-9 h-9 rounded-xl object-cover shrink-0 border border-slate-200 shadow shadow-pink-100" />
+                    ) : (
+                      <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] text-white flex items-center justify-center shrink-0 shadow shadow-pink-100">
+                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                          <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                        </svg>
+                      </div>
+                    )}
                     <span className="text-[10px] font-bold text-slate-800">Instagram</span>
                     
-                    {isInstagramLinked ? (
-                      <span className="text-[8px] font-bold text-emerald-500 flex items-center gap-0.5">
-                        ✓ Connected
+                    {instagramAccount ? (
+                      <span className="text-[8px] font-bold text-emerald-500 flex flex-col items-center gap-0.5">
+                        <span>✓ Connected</span>
+                        <span className="text-slate-400 font-normal truncate max-w-[70px]" title={instagramAccount.handle}>@{instagramAccount.handle}</span>
                       </span>
                     ) : (
                       <span 
@@ -386,14 +391,19 @@ export default function Dashboard({ refreshKey, onNavigate }) {
 
                   {/* Facebook Card */}
                   <div className="p-3 border border-slate-100 rounded-xl bg-slate-50/20 flex flex-col items-center gap-2">
-                    <div className="w-9 h-9 rounded-xl bg-[#1877f2] text-white flex items-center justify-center shrink-0 shadow shadow-blue-100">
-                      <span className="text-base font-bold">f</span>
-                    </div>
+                    {facebookAccount && facebookAccount.avatar_url ? (
+                      <img src={facebookAccount.avatar_url} alt="Facebook profile" className="w-9 h-9 rounded-xl object-cover shrink-0 border border-slate-200 shadow shadow-blue-100" />
+                    ) : (
+                      <div className="w-9 h-9 rounded-xl bg-[#1877f2] text-white flex items-center justify-center shrink-0 shadow shadow-blue-100">
+                        <span className="text-base font-bold">f</span>
+                      </div>
+                    )}
                     <span className="text-[10px] font-bold text-slate-800">Facebook</span>
                     
-                    {isFacebookLinked ? (
-                      <span className="text-[8px] font-bold text-emerald-500 flex items-center gap-0.5">
-                        ✓ Connected
+                    {facebookAccount ? (
+                      <span className="text-[8px] font-bold text-emerald-500 flex flex-col items-center gap-0.5">
+                        <span>✓ Connected</span>
+                        <span className="text-slate-400 font-normal truncate max-w-[70px]" title={facebookAccount.handle}>@{facebookAccount.handle}</span>
                       </span>
                     ) : (
                       <span 
@@ -407,14 +417,19 @@ export default function Dashboard({ refreshKey, onNavigate }) {
 
                   {/* Twitter (X) Card */}
                   <div className="p-3 border border-slate-100 rounded-xl bg-slate-50/20 flex flex-col items-center gap-2">
-                    <div className="w-9 h-9 rounded-xl bg-black text-white flex items-center justify-center shrink-0 shadow shadow-slate-200">
-                      <span className="text-xs font-bold">𝕏</span>
-                    </div>
+                    {twitterAccount && twitterAccount.avatar_url ? (
+                      <img src={twitterAccount.avatar_url} alt="Twitter profile" className="w-9 h-9 rounded-xl object-cover shrink-0 border border-slate-200 shadow shadow-slate-200" />
+                    ) : (
+                      <div className="w-9 h-9 rounded-xl bg-black text-white flex items-center justify-center shrink-0 shadow shadow-slate-200">
+                        <span className="text-xs font-bold">𝕏</span>
+                      </div>
+                    )}
                     <span className="text-[10px] font-bold text-slate-800 font-mono">Twitter (X)</span>
                     
-                    {isTwitterLinked ? (
-                      <span className="text-[8px] font-bold text-emerald-500 flex items-center gap-0.5">
-                        ✓ Connected
+                    {twitterAccount ? (
+                      <span className="text-[8px] font-bold text-emerald-500 flex flex-col items-center gap-0.5">
+                        <span>✓ Connected</span>
+                        <span className="text-slate-400 font-normal truncate max-w-[70px]" title={twitterAccount.handle}>@{twitterAccount.handle}</span>
                       </span>
                     ) : (
                       <span 
@@ -428,14 +443,19 @@ export default function Dashboard({ refreshKey, onNavigate }) {
 
                   {/* LinkedIn Card */}
                   <div className="p-3 border border-slate-100 rounded-xl bg-slate-50/20 flex flex-col items-center gap-2">
-                    <div className="w-9 h-9 rounded-xl bg-[#0a66c2] text-white flex items-center justify-center shrink-0 shadow shadow-blue-50">
-                      <span className="text-xs font-bold">in</span>
-                    </div>
+                    {linkedInAccount && linkedInAccount.avatar_url ? (
+                      <img src={linkedInAccount.avatar_url} alt="LinkedIn profile" className="w-9 h-9 rounded-xl object-cover shrink-0 border border-slate-200 shadow shadow-blue-50" />
+                    ) : (
+                      <div className="w-9 h-9 rounded-xl bg-[#0a66c2] text-white flex items-center justify-center shrink-0 shadow shadow-blue-50">
+                        <span className="text-xs font-bold">in</span>
+                      </div>
+                    )}
                     <span className="text-[10px] font-bold text-slate-800">LinkedIn</span>
                     
-                    {isLinkedInLinked ? (
-                      <span className="text-[8px] font-bold text-emerald-500 flex items-center gap-0.5">
-                        ✓ Connected
+                    {linkedInAccount ? (
+                      <span className="text-[8px] font-bold text-emerald-500 flex flex-col items-center gap-0.5">
+                        <span>✓ Connected</span>
+                        <span className="text-slate-400 font-normal truncate max-w-[70px]" title={linkedInAccount.handle}>@{linkedInAccount.handle}</span>
                       </span>
                     ) : (
                       <span 
