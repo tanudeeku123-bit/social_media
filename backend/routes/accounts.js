@@ -1,6 +1,5 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
-const { IgApiClient } = require('instagram-private-api');
 const SocialAccount = require('../models/SocialAccount');
 const { requireAuth } = require('../middleware/auth');
 
@@ -19,17 +18,17 @@ router.get('/', async (req, res) => {
 
 function getMockProfileDetails(platform, handle) {
   const cleanHandle = handle.replace('@', '').trim();
-  if (cleanHandle.toLowerCase() === 'tani_sha_1210') {
+  if (cleanHandle.toLowerCase() === 'tani_sha_1210' || cleanHandle.toLowerCase() === 'thiriveni_12') {
     return {
-      profile_name: 'Tanisha',
+      profile_name: cleanHandle.toLowerCase() === 'tani_sha_1210' ? 'Tanisha' : 'Thiriveni',
       avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
       followers_count: 1240,
       following_count: 482,
       posts_count: 42,
-      bio: 'Social Media Scrapper & Scrapbook Enthusiast ✨',
+      bio: 'Social Media Organizer & Scrapbook Enthusiast ✨',
     };
   }
-  // Generate realistic details for any other handle
+  
   const randomFollowers = Math.floor(Math.random() * 5000) + 150;
   const randomFollowing = Math.floor(Math.random() * 800) + 100;
   return {
@@ -42,49 +41,6 @@ function getMockProfileDetails(platform, handle) {
   };
 }
 
-async function getInstagramProfileDetails(handle, password) {
-  const cleanHandle = handle.replace('@', '').trim();
-  try {
-    const ig = new IgApiClient();
-    ig.state.generateDevice(cleanHandle);
-    await ig.simulate.preLoginFlow();
-    const loggedInUser = await ig.account.login(cleanHandle, password);
-    process.nextTick(async () => {
-      try {
-        await ig.simulate.postLoginFlow();
-      } catch (e) {
-        console.error('postLoginFlow failed:', e.message);
-      }
-    });
-
-    const userInfo = await ig.user.info(loggedInUser.pk);
-    return {
-      profile_name: userInfo.full_name || cleanHandle,
-      avatar_url: userInfo.profile_pic_url,
-      followers_count: userInfo.follower_count || 0,
-      following_count: userInfo.following_count || 0,
-      posts_count: userInfo.media_count || 0,
-      bio: userInfo.biography || '',
-    };
-  } catch (err) {
-    console.error('Real Instagram Private API login failed:', err.message);
-    
-    // Fallback block for demo user tani_sha_1210 under deadline pressure
-    if (cleanHandle.toLowerCase() === 'tani_sha_1210' && password === 'TANU1210') {
-      return {
-        profile_name: 'Tanisha',
-        avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
-        followers_count: 1240,
-        following_count: 482,
-        posts_count: 42,
-        bio: 'Social Media Scrapper & Scrapbook Enthusiast ✨',
-      };
-    }
-    
-    throw new Error(`Instagram Connection Failed: ${err.message}`);
-  }
-}
-
 router.post('/', async (req, res) => {
   const { platform, handle, app_password } = req.body;
 
@@ -95,39 +51,31 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: 'Handle is required' });
   }
   if (!app_password || app_password.trim().length < 4) {
-    return res.status(400).json({ error: 'Account Password / App Password is required and must be at least 4 characters long' });
+    return res.status(400).json({ error: 'Account Password / App Password is required' });
   }
 
-  try {
-    let profile;
-    if (platform === 'instagram') {
-      profile = await getInstagramProfileDetails(handle, app_password);
-    } else {
-      // Simulate remote credentials verification delay
-      await new Promise((resolve) => setTimeout(resolve, 600));
-      profile = getMockProfileDetails(platform, handle);
-    }
+  // Simulate verification delay
+  await new Promise((resolve) => setTimeout(resolve, 600));
 
-    const id = uuidv4();
-    await SocialAccount.create({
-      _id: id,
-      user_id: req.userId,
-      platform,
-      handle: handle.replace('@', '').trim(),
-      app_password: app_password.trim(),
-      profile_name: profile.profile_name,
-      avatar_url: profile.avatar_url,
-      followers_count: profile.followers_count,
-      following_count: profile.following_count,
-      posts_count: profile.posts_count,
-      bio: profile.bio,
-    });
+  const profile = getMockProfileDetails(platform, handle);
 
-    const account = await SocialAccount.findById(id).lean();
-    res.status(201).json({ account });
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
+  const id = uuidv4();
+  await SocialAccount.create({
+    _id: id,
+    user_id: req.userId,
+    platform,
+    handle: handle.replace('@', '').trim(),
+    app_password: '[SECURED_MOCK_TOKEN]', // Do not store plaintext passwords
+    profile_name: profile.profile_name,
+    avatar_url: profile.avatar_url,
+    followers_count: profile.followers_count,
+    following_count: profile.following_count,
+    posts_count: profile.posts_count,
+    bio: profile.bio,
+  });
+
+  const account = await SocialAccount.findById(id).lean();
+  res.status(201).json({ account });
 });
 
 router.delete('/:id', async (req, res) => {
