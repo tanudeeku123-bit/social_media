@@ -157,4 +157,46 @@ async function generateImage({ prompt }) {
   return { filename, mimetype: 'image/jpeg', mediaType: 'image', originalUrl: `/uploads/originals/${filename}`, provider: 'pollinations' };
 }
 
-module.exports = { PLATFORM_SPECS, fitMediaForPlatform, generateImage, ORIGINALS_DIR, isVideo };
+function createVideoFromImage(imagePath, videoPath) {
+  if (!ffmpeg) {
+    return Promise.reject(new Error('ffmpeg binary is not available'));
+  }
+  return new Promise((resolve, reject) => {
+    ffmpeg()
+      .input(imagePath)
+      .inputOptions(['-loop 1'])
+      .outputOptions([
+        '-c:v libx264',
+        '-t 3',
+        '-pix_fmt yuv420p',
+        "-vf zoompan=z='min(zoom+0.0015,1.5)':d=75:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)',scale=1024:1024"
+      ])
+      .on('end', () => resolve())
+      .on('error', (err) => reject(err))
+      .save(videoPath);
+  });
+}
+
+async function generateVideo({ prompt }) {
+  const imageResult = await generateImage({ prompt });
+  const imagePath = path.join(ORIGINALS_DIR, imageResult.filename);
+
+  const videoFilename = `${path.parse(imageResult.filename).name}.mp4`;
+  const videoOutputPath = path.join(ORIGINALS_DIR, videoFilename);
+
+  try {
+    await createVideoFromImage(imagePath, videoOutputPath);
+    return {
+      filename: videoFilename,
+      mimetype: 'video/mp4',
+      mediaType: 'video',
+      originalUrl: `/uploads/originals/${videoFilename}`,
+      provider: `${imageResult.provider}-ffmpeg`
+    };
+  } catch (err) {
+    console.error('Failed to convert image to video using ffmpeg:', err.message);
+    return imageResult;
+  }
+}
+
+module.exports = { PLATFORM_SPECS, fitMediaForPlatform, generateImage, generateVideo, ORIGINALS_DIR, isVideo };

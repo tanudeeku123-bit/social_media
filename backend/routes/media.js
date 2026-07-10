@@ -3,7 +3,7 @@ const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const { requireAuth } = require('../middleware/auth');
-const { fitMediaForPlatform, generateImage, PLATFORM_SPECS, ORIGINALS_DIR, isVideo } = require('../services/mediaService');
+const { fitMediaForPlatform, generateImage, generateVideo, PLATFORM_SPECS, ORIGINALS_DIR, isVideo } = require('../services/mediaService');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -50,14 +50,19 @@ router.post('/:filename/fit', async (req, res) => {
   }
 });
 
-// Generates an image from a text prompt. Uses the real Grok (xAI) image
+// Generates an image or video from a text prompt. Uses the real Grok (xAI) image
 // model if XAI_API_KEY is set; otherwise falls back to a free, no-key
 // image generator (Pollinations) so this works with zero extra setup.
 router.post('/generate', async (req, res) => {
-  const { prompt } = req.body;
+  const { prompt, type } = req.body;
   if (!prompt || !prompt.trim()) return res.status(400).json({ error: 'prompt is required' });
   try {
-    const result = await generateImage({ prompt: prompt.trim() });
+    let result;
+    if (type === 'video') {
+      result = await generateVideo({ prompt: prompt.trim() });
+    } else {
+      result = await generateImage({ prompt: prompt.trim() });
+    }
     res.status(201).json(result);
   } catch (err) {
     res.status(502).json({ error: err.message });

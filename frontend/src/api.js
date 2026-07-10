@@ -32,6 +32,8 @@ export const api = {
   login: (email, password) => request('/auth/login', { method: 'POST', body: { email, password } }),
   savePlatforms: (platforms) => request('/auth/platforms', { method: 'PUT', body: { platforms } }),
   me: () => request('/auth/me'),
+  forgotPassword: (email) => request('/auth/forgot-password', { method: 'POST', body: { email } }),
+  resetPassword: (email, code, newPassword) => request('/auth/reset-password', { method: 'POST', body: { email, code, newPassword } }),
 
   getBrand: () => request('/brand'),
   updateBrand: (profile) => request('/brand', { method: 'PUT', body: profile }),
@@ -66,7 +68,7 @@ export const api = {
   },
   fitMedia: (filename, platform, mimetype) =>
     request(`/media/${filename}/fit`, { method: 'POST', body: { platform, mimetype } }),
-  generateMedia: (prompt) => request('/media/generate', { method: 'POST', body: { prompt } }),
+  generateMedia: (prompt, type = 'image') => request('/media/generate', { method: 'POST', body: { prompt, type } }),
 
   getCampaigns: () => request('/campaigns'),
   createCampaign: (campaign) => request('/campaigns', { method: 'POST', body: campaign }),

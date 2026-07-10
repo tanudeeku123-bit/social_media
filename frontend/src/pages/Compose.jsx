@@ -44,6 +44,24 @@ function useSpeechRecognition(onResult) {
   return { listening, supported, toggle };
 }
 
+async function downloadFile(url, filename) {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(blobUrl);
+  } catch (err) {
+    console.error('Failed to download file:', err);
+    window.open(url, '_blank');
+  }
+}
+
 export default function Compose({ onSaved }) {
   const [idea, setIdea] = useState('');
   const [connectedPlatforms, setConnectedPlatforms] = useState([]);
@@ -65,6 +83,7 @@ export default function Compose({ onSaved }) {
   const [fittingPlatform, setFittingPlatform] = useState(null);
   const [mediaMode, setMediaMode] = useState('upload'); // 'upload' | 'generate'
   const [imagePrompt, setImagePrompt] = useState('');
+  const [genType, setGenType] = useState('image'); // 'image' | 'video'
   const [chosenFileName, setChosenFileName] = useState('');
   const fileInputRef = useRef(null);
 
@@ -115,15 +134,15 @@ export default function Compose({ onSaved }) {
     }
   }
 
-  async function handleGenerateImage() {
+  async function handleGenerateMedia() {
     if (!imagePrompt.trim()) return;
     setMediaError('');
     setMediaBusy(true);
     setFittedByPlatform({});
     try {
-      const generated = await api.generateMedia(imagePrompt.trim());
+      const generated = await api.generateMedia(imagePrompt.trim(), genType);
       setMedia(generated);
-      showToast('Image generated successfully', 'success');
+      showToast(`${genType === 'video' ? 'Video' : 'Image'} generated successfully`, 'success');
     } catch (err) {
       setMediaError(err.message);
     } finally {
@@ -162,17 +181,17 @@ export default function Compose({ onSaved }) {
       // 1. Generate text drafts
       const d = await api.generatePosts(idea.trim(), selected);
 
-      // 2. Automatically generate a matching AI image based on their post idea!
+      // 2. Automatically generate a matching AI visual based on their post idea!
       let currentMedia = media;
       if (!currentMedia) {
         setMediaBusy(true);
         try {
-          const generated = await api.generateMedia(idea.trim());
+          const generated = await api.generateMedia(idea.trim(), genType);
           setMedia(generated);
           currentMedia = generated;
           showToast('AI automatically generated matching visual asset!', 'success');
         } catch (err) {
-          console.error('Auto image generation failed:', err);
+          console.error('Auto media generation failed:', err);
         } finally {
           setMediaBusy(false);
         }
@@ -346,16 +365,24 @@ export default function Compose({ onSaved }) {
                       </label>
                     </div>
                   ) : (
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 items-center">
+                      <select
+                        value={genType}
+                        onChange={(e) => setGenType(e.target.value)}
+                        className="px-3 py-2.5 rounded-xl glass-input text-sm bg-slate-900 text-slate-200 border-slate-800 shrink-0 cursor-pointer focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      >
+                        <option value="image">🖼️ Image</option>
+                        <option value="video">🎥 Video</option>
+                      </select>
                       <input
                         value={imagePrompt}
                         onChange={(e) => setImagePrompt(e.target.value)}
-                        placeholder="e.g. modern tech office, warm ambient light, high quality"
+                        placeholder={genType === 'video' ? "Describe the video you want to generate..." : "e.g. modern tech office, warm ambient light, high quality"}
                         className="flex-1 px-4 py-2.5 rounded-xl glass-input text-sm"
                       />
                       <button
                         type="button"
-                        onClick={handleGenerateImage}
+                        onClick={handleGenerateMedia}
                         disabled={mediaBusy || !imagePrompt.trim()}
                         className="px-4 py-2.5 rounded-xl btn-primary text-xs font-semibold disabled:opacity-40 shrink-0"
                       >
@@ -370,7 +397,7 @@ export default function Compose({ onSaved }) {
                 <div className="flex items-center gap-4 bg-slate-900/40 p-4 rounded-2xl border border-slate-800/80">
                   <div className="w-24 h-24 rounded-lg overflow-hidden shrink-0 border border-slate-800">
                     {media.mediaType === 'video' ? (
-                      <video src={media.originalUrl} className="h-full w-full object-cover" />
+                      <video src={media.originalUrl} controls className="h-full w-full object-cover" />
                     ) : (
                       <img src={media.originalUrl} alt="" className="h-full w-full object-cover" />
                     )}
@@ -378,7 +405,17 @@ export default function Compose({ onSaved }) {
                   <div>
                     <p className="text-sm font-semibold text-white mb-1">Visual Asset Connected</p>
                     <p className="text-xs text-slate-400 mb-2">Automatically optimized copies will build below.</p>
-                    <button type="button" onClick={clearMedia} className="text-xs text-rose-400 hover:underline font-bold">Remove visual</button>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => downloadFile(media.originalUrl, media.filename)}
+                        className="text-xs text-indigo-400 hover:underline font-bold flex items-center gap-1 cursor-pointer"
+                      >
+                        📥 Download Original
+                      </button>
+                      <span className="text-slate-800">|</span>
+                      <button type="button" onClick={clearMedia} className="text-xs text-rose-400 hover:underline font-bold cursor-pointer">Remove visual</button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -418,12 +455,21 @@ export default function Compose({ onSaved }) {
                       <div>
                         {fittingPlatform === d.platform && <p className="text-xs text-slate-500">Optimizing media aspect ratio…</p>}
                         {fitted && (
-                          <div className="w-48 rounded-xl overflow-hidden border border-slate-800">
-                            {fitted.mediaType === 'video' ? (
-                              <video src={fitted.url} controls className="max-h-48 w-full object-cover" />
-                            ) : (
-                              <img src={fitted.url} alt="" className="max-h-48 w-full object-cover" />
-                            )}
+                          <div className="space-y-2">
+                            <div className="w-48 rounded-xl overflow-hidden border border-slate-800">
+                              {fitted.mediaType === 'video' ? (
+                                <video src={fitted.url} controls className="max-h-48 w-full object-cover" />
+                              ) : (
+                                <img src={fitted.url} alt="" className="max-h-48 w-full object-cover" />
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => downloadFile(fitted.url, `${d.platform}-${media.filename}`)}
+                              className="inline-flex items-center gap-1 text-xs text-indigo-400 hover:underline font-bold cursor-pointer"
+                            >
+                              📥 Download Fitted ({PLATFORM_LABELS[d.platform]})
+                            </button>
                           </div>
                         )}
                         {!fitted && fittingPlatform !== d.platform && (

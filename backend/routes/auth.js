@@ -77,4 +77,65 @@ router.get('/me', requireAuth, async (req, res) => {
   res.json({ user: { id: user._id, email: user.email, name: user.name, default_platforms: user.default_platforms || [] } });
 });
 
+router.post('/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    return res.status(404).json({ error: 'No account found with this email' });
+  }
+
+  // Generate 6-digit verification code
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes expiration
+
+  user.reset_code = code;
+  user.reset_code_expires_at = expiresAt;
+  await user.save();
+
+  console.log(`[PASS_RESET_MOCK] Verification code for ${email}: ${code}`);
+
+  res.json({
+    success: true,
+    message: 'Verification code generated successfully',
+    code // Return in response for simulated/demo ease
+  });
+});
+
+router.post('/reset-password', async (req, res) => {
+  const { email, code, newPassword } = req.body;
+  if (!email || !code || !newPassword) {
+    return res.status(400).json({ error: 'Email, verification code, and new password are required' });
+  }
+
+  if (newPassword.length < 8) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters' });
+  }
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  if (!user.reset_code || user.reset_code !== code) {
+    return res.status(400).json({ error: 'Invalid verification code' });
+  }
+
+  if (!user.reset_code_expires_at || user.reset_code_expires_at < new Date()) {
+    return res.status(400).json({ error: 'Verification code has expired' });
+  }
+
+  // Update password hash
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+  user.password_hash = passwordHash;
+  user.reset_code = undefined;
+  user.reset_code_expires_at = undefined;
+  await user.save();
+
+  res.json({ success: true, message: 'Password has been reset successfully' });
+});
+
 module.exports = router;

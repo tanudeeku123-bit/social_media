@@ -6,6 +6,8 @@ const userSchema = new mongoose.Schema({
   password_hash: { type: String, required: true },
   name: { type: String, default: '' },
   default_platforms: { type: [String], default: [] },
+  reset_code: { type: String },
+  reset_code_expires_at: { type: Date },
   created_at: { type: Date, default: Date.now },
 });
 
